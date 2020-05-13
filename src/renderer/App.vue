@@ -6,7 +6,7 @@
 
 <script>
   export default {
-    name: 'param'
+    name: 'paramApp'
   }
 </script>
 
