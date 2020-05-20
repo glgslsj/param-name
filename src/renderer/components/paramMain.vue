@@ -14,10 +14,10 @@
 			</a-row>
 		</div>
 
-		<a-list style="background-color: white" item-layout="horizontal" :dataSource="getparamEn">
+		<a-list style="background-color: white" item-layout="horizontal" :dataSource="propsConnectsNow">
 			<a-list-item slot="renderItem" slot-scope="item">
 				<a-list-item-meta>
-					<div class="m-l-10 font-16" slot="title">{{item.props}}</div>
+					<div class="m-l-10 font-16" slot="title">{{item.propsEn.props}}</div>
 				</a-list-item-meta>
 				<a slot="actions" @click="cutEn(item)">复制</a>
 			</a-list-item>
@@ -38,7 +38,7 @@
 				<a-list-item-meta>
 					<div class="m-l-10 font-16" slot="title">变量意思：{{item.prop.content}}；   变量名：{{item.propsEn.props}}</div>
 				</a-list-item-meta>
-				<a slot="actions" @click="cutEn(item)">复制变量名</a>
+				<a slot="actions" @click="cutEnRecent(item)">复制变量名</a>
 			</a-list-item>
 		</a-list>
 	</div>
@@ -52,8 +52,8 @@
       name: 'paramMain',
       data () {
         return {
-          searchContent: '',
-          setparamEn: '',
+          searchContent: '',// 绑定的是第一input
+          setparamEn: '',// 绑定的是第二input
 					googleTransRes:'等待查询',
 					youdaoTransRes:'等待查询',
 					transItems:[
@@ -70,13 +70,33 @@
         }
       },
       apollo: {
+          newProps:{
+              query:
+                  gql`query ($content:String!){
+																 propskit_props(where: {content: {_eq: $content}}) {
+										id
+										created_at
+										content
+									}
+								}`,
+              variables () {
+                  return {
+                      content:this.searchContent
+                  }
+              },
+              update (data) {
+                  // 返回的值将更新 vue 属性 'allTodos'
+                  return data.propskit_props
+              }
+					},
 				propsConnectsRecent: {
 						// 最近的三次连接
 				query:
 									gql`query {
-								 propskit_propsConnect(order_by: {referTimes: asc}) {
+								 propskit_propsConnect(limit:3,order_by: {referTimes: asc}) {
 						 referTimes
 				created_at
+				id
 				propsEn {
 					props
 					id
@@ -92,11 +112,46 @@
 					return data.propskit_propsConnect
 				}
 			},
+          newPropsConnect: {
+              // 是否存在旧连接
+              query:
+									gql`query ($propsEnId: uuid!, $propsId: uuid!){
+														 propskit_propsConnect(where:{propsId:{_eq:$propsId},propsEnId:{_eq:$propsEnId}}) {
+												 referTimes
+										created_at
+										id
+										propsEn {
+											props
+											id
+										}
+										prop {
+											content
+											id
+										}
+									}
+								}`,
+              variables () {
+                  return {
+                      propsId:this.getparam[0].id ,
+                      propsEnId:this.getparamEn[0].id
+                  }
+              },
+              update (data) {
+                  // 返回的值将更新 vue 属性 'allTodos'
+                  return data.propskit_propsConnect
+              },
+							skip() {
+                  let bool1 = this.getparam&&this.getparam.hasOwnProperty(length)&&this.getparam.length>0
+									 let bool2 = this.getparamEn&&this.getparamEn.hasOwnProperty(length)&&this.getparamEn.length>0
+									 let flag = bool1&&bool2
+									 return !flag
+              }
+          },
 				propsConnectsNow: {
-						// 这次的连接
+						// 这次的连接，根据input内输入的来
 						query:
-															gql`query($content:String!) {
-																							propskit_propsConnect(where: {prop: {content: {_like: $content}, _or: {content: {_similar: $content}}}}) {
+							gql`query($content:String!) {
+															propskit_propsConnect(limit:6 ,order_by: {referTimes: asc}, where: {prop: {content: {_like: $content}, _or: {content: {_similar: $content}}}}) {
 								referTimes
 								created_at
 								propsEn {
@@ -122,8 +177,8 @@
 								if (this.getparam.length===0) return true
 						},
 				},
-        getparamEn: {
-              // 给一个arr查6个英语
+        getNewParamEn: {
+              // 查是否存在这个英语，新
           query:
 						gql`query ($props:String!) {
 						 propskit_propsEn(where: {props: {_eq:$props}}) {
@@ -137,10 +192,28 @@
 							}
 					},
           update (data) {
-            // 返回的值将更新 vue 属性 'allTodos'
             return data.propskit_propsEn
           }
         },
+          getparamEn: {
+              // 查是否存在这个英语
+              query:
+                  gql`query ($props:String!) {
+						 propskit_propsEn(where: {props: {_eq:$props}}) {
+							props
+							id
+						}
+					}`,
+              variables () {
+                  return {
+                      props:this.setparamEn
+                  }
+              },
+              update (data) {
+                  // 返回的值将更新 vue 属性 'allTodos'
+                  return data.propskit_propsEn
+              }
+          },
           getparam: {
               //看看是否存在这个变量名
 							query:
@@ -196,10 +269,13 @@
         }
 		},
   methods: {
-          hh: function () {
-              console.log(this.getparam)
-              console.log(this.propsConnectsNow)
-          },
+      sleep (time) {
+          return new Promise(resolve => {
+              setTimeout(() => {
+                  resolve()
+              }, time)
+          })
+      },
       parseParams  (uri, params) {
           // 拼接url字符串
           const paramsArray = []
@@ -211,11 +287,11 @@
           }
           return uri
       },
-      copy: function (param) {
-          clipboard.writeText(param)
-      },
     async addParams () {
-							    // todo:开始搜索，如果数据库够5个就显示。不够的话就展示翻译
+						if (this.getparam.length===1) {
+								this.$message.success('已有变量，不用新增')
+								return
+						}
           let data = await this.$apollo.mutate({
             mutation: gql`mutation($content:String!){
 								insert_propskit_props(objects: {content: $content}) {
@@ -233,13 +309,51 @@
             this.$message.error('出错了，请重试')
           })
           if (data) {
-            console.log(data)
+						this.$message.success('成功')
           }
         },
-        async addParamConnet () {
-							    // todo:增加paramEn并增加一个connect
+			putNewprops: async function () {
+          // 新建一个prop
+          let res = await this.$apollo.mutate({
+              mutation: gql`mutation($content: String!) {
+											insert_propskit_props(objects: {content: $content}) {
+												returning {
+													created_at
+													id
+												}
+											}
+										}`,
+              variables: {
+                  content: this.searchContent
+              }
+          }).catch((error) => {
+              // 错误
+              console.log(error)
+          })
+					return res
+      },
+			putNewpropEn: async function () {
+          let res = await this.$apollo.mutate({
+              mutation: gql`mutation($props: String!) {
+												insert_propskit_propsEn(objects: {props: $props}) {
+													returning {
+														id
+														created_at
+													}
+												}
+											}`,
+              variables: {
+                  props: this.setparamEn
+              }
+          }).catch((error) => {
+              // 错误
+              console.log(error)
+          })
+          return res
+      },
+			putNewconnect: async function (propsId,propsEnId) {
           let data = await this.$apollo.mutate({
-            mutation: gql`mutation($propsEnId: uuid!, $propsId: uuid!) {
+              mutation: gql`mutation($propsEnId: uuid!, $propsId: uuid!) {
 												insert_propskit_propsConnect(objects: {propsEnId: $propsEnId, propsId: $propsId}) {
 													returning {
 														id
@@ -247,23 +361,111 @@
 													}
 												}
 											}`,
-            variables: {
-              content: this.searchContent
-            }
+              variables: {
+                  propsId: propsId,
+                  propsEnId: propsEnId
+              }
           }).catch((error) => {
-            // 错误
-            console.log(error)
+              // 错误
+              console.log(error)
           })
-          if (data) {
-            this.$message.success('成功')
-          }
-        },
-        cutEn: function () {
-          // todo: 复制变量英语并增加一次数据
-        }
+					return data
       },
-			mounted: function () {
-			},
+			ConnectAndone: async function (id) {
+          let data = await this.$apollo.mutate({
+              mutation: gql`mutation($id: uuid!) {
+												update_propskit_propsConnect(where: {id: {_eq: $id}}, _inc: {referTimes: 1}) {
+													returning {
+														id
+														referTimes
+														updated_at
+													}
+												}
+											}`,
+              variables: {
+                  id: id
+              }
+          }).catch((error) => {
+              // 错误
+              console.log(error)
+          })
+					return data
+      },
+        async addParamConnet () {
+						let propsId = ''
+						let propsEnId = ''
+						let data
+						if (this.getparam.length === 0) {
+						    // 新建一个prop
+                let res = await this.putNewprops
+                propsId = res.data.insert_propskit_props.returning[0].id
+            }else {
+                propsId=this.getparam[0].id
+						}
+						if (this.getparamEn.length === 0) {
+						    // 新建一个propen
+                let res1 = await this.putNewpropEn
+									propsEnId = res1.data.insert_propskit_propsEn.returning[0].id
+            }else {
+                propsEnId=this.getparamEn[0].id
+						}
+            await this.$apollo.queries.getparam.refetch()
+            await this.$apollo.queries.getparamEn.refetch()
+						// 结束判断使用的判断skip是否为false
+						while (!this.newPropsConnect) {
+						    this.sleep(500)
+						}
+						if (this.newPropsConnect.length === 0) {
+						    // 新增一个connect
+                data = await this.putNewconnect(propsId,propsEnId)
+						}
+						else{
+						    // 给connect新增1
+                data = await this.ConnectAndone(this.newPropsConnect[0].id)
+						}
+          if (data) {
+            this.$message.success('复制成功')
+          }
+            clipboard.writeText(this.setparamEn)
+        },
+        cutEn: async function (i) {
+            // i.propsEn.id	这次英语肯定存在，先看有没有中文，然后再看有没有连接，然后再新建或者加次数
+						let data
+						this.setparamEn = i.propsEn.props
+            if (this.newProps.length === 0) {
+                await this.putNewprops()
+                this.$apollo.queries.getparam.refetch()
+            }
+            while (!this.newPropsConnect) {
+                this.sleep(500)
+            }
+            if (this.newPropsConnect.length === 0) {
+                // 新增一个connect
+                data = await this.putNewconnect(this.getparam[0].id,i.propsEn.id)
+            }
+            else{
+                // 给connect新增1
+                data = await this.ConnectAndone(this.newPropsConnect[0].id)
+            }
+            if (data) {
+                clipboard.writeText(this.setparamEn)
+                this.$message.success('复制成功')
+            }
+        },
+				cutEnRecent: async function (i) {
+            // todo: 复制变量英语并增加一次数据,这个直接加次数就行
+            let data = await this.ConnectAndone(i.id)
+						if (data){
+                clipboard.writeText(i.propsEn.props)
+                this.$message.success('复制成功')
+						}
+        },
+				copy: async function (param) {
+            // 先看汉语和英语是否存在，然后新建，最后看看连接存不存在，新建
+            this.setparamEn = param
+            await this.addParamConnet()
+        }
+      }
     }
 </script>
 
