@@ -157,6 +157,10 @@
 								propsEn {
 									props
 									id
+									propsConnects{
+										id
+										propsId
+									}
 								}
 								prop {
 									content
@@ -182,6 +186,10 @@
           query:
 						gql`query ($props:String!) {
 						 propskit_propsEn(where: {props: {_eq:$props}}) {
+						 	propsConnects{
+								id
+								propsId
+							}
 							props
 							id
 						}
@@ -330,7 +338,7 @@
               // 错误
               console.log(error)
           })
-					return res
+					return Promise.resolve(res)
       },
 			putNewpropEn: async function () {
           let res = await this.$apollo.mutate({
@@ -395,33 +403,40 @@
 						let propsId = ''
 						let propsEnId = ''
 						let data
+						let hasconnet = null
+						let createFlag = this.getparam.length >0&&this.getparamEn.length>0
 						if (this.getparam.length === 0) {
 						    // 新建一个prop
-                let res = await this.putNewprops
+                let res = await this.putNewprops()
                 propsId = res.data.insert_propskit_props.returning[0].id
             }else {
                 propsId=this.getparam[0].id
 						}
 						if (this.getparamEn.length === 0) {
 						    // 新建一个propen
-                let res1 = await this.putNewpropEn
+                let res1 = await this.putNewpropEn()
 									propsEnId = res1.data.insert_propskit_propsEn.returning[0].id
             }else {
                 propsEnId=this.getparamEn[0].id
+								if (createFlag) {
+                    let connects = this.getparamEn[0].propsConnects
+										if(connects){
+                        hasconnet = connects.find( function (i) {
+                            return i.propsId === this.getparam[0].id
+                        },this)
+										}
+								}
 						}
             await this.$apollo.queries.getparam.refetch()
             await this.$apollo.queries.getparamEn.refetch()
 						// 结束判断使用的判断skip是否为false
-						while (!this.newPropsConnect) {
-						    this.sleep(500)
-						}
-						if (this.newPropsConnect.length === 0) {
-						    // 新增一个connect
-                data = await this.putNewconnect(propsId,propsEnId)
+						if (createFlag && hasconnet) {
+                // 给connect新增1
+                data = await this.ConnectAndone(hasConnect.id)
 						}
 						else{
-						    // 给connect新增1
-                data = await this.ConnectAndone(this.newPropsConnect[0].id)
+								// 新增一个connect
+                data = await this.putNewconnect(propsId,propsEnId)
 						}
           if (data) {
             this.$message.success('复制成功')
@@ -432,28 +447,24 @@
             // i.propsEn.id	这次英语肯定存在，先看有没有中文，然后再看有没有连接，然后再新建或者加次数
 						let data
 						this.setparamEn = i.propsEn.props
+            await this.$apollo.queries.getparamEn.refetch()
             if (this.newProps.length === 0) {
                 await this.putNewprops()
-                this.$apollo.queries.getparam.refetch()
-            }
-            while (!this.newPropsConnect) {
-                this.sleep(500)
-            }
-            if (this.newPropsConnect.length === 0) {
-                // 新增一个connect
+                await this.$apollo.queries.getparam.refetch()
                 data = await this.putNewconnect(this.getparam[0].id,i.propsEn.id)
-            }
-            else{
-                // 给connect新增1
+            }else if (this.newPropsConnect.length >0) {
+                // 存在连接
                 data = await this.ConnectAndone(this.newPropsConnect[0].id)
-            }
+						} else {
+                // 不存在连接
+                data = await this.putNewconnect(this.getparam[0].id,i.propsEn.id)
+						}
             if (data) {
                 clipboard.writeText(this.setparamEn)
                 this.$message.success('复制成功')
             }
         },
 				cutEnRecent: async function (i) {
-            // todo: 复制变量英语并增加一次数据,这个直接加次数就行
             let data = await this.ConnectAndone(i.id)
 						if (data){
                 clipboard.writeText(i.propsEn.props)
@@ -463,6 +474,7 @@
 				copy: async function (param) {
             // 先看汉语和英语是否存在，然后新建，最后看看连接存不存在，新建
             this.setparamEn = param
+            await this.$apollo.queries.getparamEn.refetch()
             await this.addParamConnet()
         }
       }
