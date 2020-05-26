@@ -277,6 +277,10 @@
         }
 		},
   methods: {
+				min: function () {
+						let ipc = require('electron').ipcRenderer
+						ipc.send('window-min')
+				},
       sleep (time) {
           return new Promise(resolve => {
               setTimeout(() => {
@@ -318,6 +322,7 @@
           })
           if (data) {
 						this.$message.success('成功')
+						this.min()
           }
         },
 			putNewprops: async function () {
@@ -439,9 +444,11 @@
                 data = await this.putNewconnect(propsId,propsEnId)
 						}
           if (data) {
-            this.$message.success('复制成功')
+              this.$message.success('复制成功')
+							clipboard.writeText(this.setparamEn)
+							this.min()
           }
-            clipboard.writeText(this.setparamEn)
+
         },
         cutEn: async function (i) {
             // i.propsEn.id	这次英语肯定存在，先看有没有中文，然后再看有没有连接，然后再新建或者加次数
@@ -462,6 +469,7 @@
             if (data) {
                 clipboard.writeText(this.setparamEn)
                 this.$message.success('复制成功')
+                this.min()
             }
         },
 				cutEnRecent: async function (i) {
@@ -469,13 +477,18 @@
 						if (data){
                 clipboard.writeText(i.propsEn.props)
                 this.$message.success('复制成功')
+                this.min()
 						}
         },
 				copy: async function (param) {
             // 先看汉语和英语是否存在，然后新建，最后看看连接存不存在，新建
+						if (param ==='等待查询'){
+						    return
+						}
             this.setparamEn = param
             await this.$apollo.queries.getparamEn.refetch()
             await this.addParamConnet()
+            this.min()
         }
       }
     }

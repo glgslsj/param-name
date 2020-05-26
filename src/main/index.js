@@ -1,6 +1,7 @@
-'use strict'
+/* eslint-disable */
+// 'use strict'
 
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, globalShortcut } from 'electron'
 
 /**
  * Set `__static` path to static files in production
@@ -15,14 +16,20 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
+function setShortcut () {
+  /* Alt + s: 打开搜索面板 */
+  const ret = globalShortcut.register('Alt+z', () => {
+    mainWindow.restore()
+  })
+}
 function createWindow () {
   /**
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    height: 563,
+    height: 750,
     useContentSize: true,
-    width: 1000
+    width: 300
   })
 
   mainWindow.loadURL(winURL)
@@ -32,7 +39,10 @@ function createWindow () {
   })
 }
 
-app.on('ready', createWindow)
+app.on('ready', ()=>{
+  createWindow()
+  setShortcut()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -44,6 +54,12 @@ app.on('activate', () => {
   if (mainWindow === null) {
     createWindow()
   }
+})
+
+const ipc =require('electron').ipcMain
+//登录窗口最小化
+ipc.on('window-min', function () {
+  mainWindow.minimize();
 })
 
 /**
