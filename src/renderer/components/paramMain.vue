@@ -1,6 +1,9 @@
 <template>
 	<div>
-		<div style="font-size: medium;font-weight: bold">变量名工具</div>
+		<div style="font-size: medium;font-weight: bold">
+			<span>变量名工具</span>
+			<a style="float: right" @click="switchKit">切换命令行工具</a>
+		</div>
 		<div>
 			<a-row type="flex" justify="center">
 				<a-col :span="12" style="padding: 10px">
@@ -277,6 +280,9 @@
         }
 		},
   methods: {
+      switchKit: function () {
+          this.$router.push('/commandKit')
+      },
 				min: function () {
 						let ipc = require('electron').ipcRenderer
 						ipc.send('window-min')

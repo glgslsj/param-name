@@ -11,8 +11,9 @@ export default new Router({
       component: require('@/components/paramMain').default
     },
     {
-      path: '*',
-      redirect: '/'
+      path: '/commandKit',
+      name: 'commandKit',
+      component: require('@/components/commandKit').default
     }
   ]
 })
