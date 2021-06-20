@@ -16,6 +16,7 @@
 
 <script>
 import gql from 'graphql-tag'
+var robot = require('robotjs')
 export default {
 	name: 'tomato',
 	data() {
@@ -26,11 +27,12 @@ export default {
 	computed: {},
 	methods: {
 		robotmove: function() {
-			//robot.moveMouse(100, 100);
+			robot.moveMouse(100, 100)
 			console.log(process.versions)
 		},
 		robotclick: function() {
-			//robot.mouseClick();
+			robot.mouseClick()
+			console.log(123)
 		},
 		totomato: function() {
 			this.$router.push('/tomato')
