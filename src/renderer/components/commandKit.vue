@@ -196,46 +196,46 @@
 </template>
 
 <script>
-    const {clipboard} = require('electron')
     import axios from 'axios'
-    import gql from 'graphql-tag'
+import gql from 'graphql-tag'
+const {clipboard} = require('electron')
     export default {
-        name: 'commandKit',
-        data () {
-            return {
-                addCommand: false,
-                commandConnect: [],
-                newCommandMainscript: '',
-                newCommand: [], // 放新增的命令
-                newCommandType: [], // 放新增命令的类型
-                newCommandScript: [], // 放新增命令的描述
-                newLabel: '', // 新增的label
-                checkedLabels: [], // 选中的label
-                relatedLabels: [] // 相关的标签
-            }
-        },
-        apollo: {
-            labels: {
-                query:
+      name: 'commandKit',
+      data () {
+        return {
+          addCommand: false,
+          commandConnect: [],
+          newCommandMainscript: '',
+          newCommand: [], // 放新增的命令
+          newCommandType: [], // 放新增命令的类型
+          newCommandScript: [], // 放新增命令的描述
+          newLabel: '', // 新增的label
+          checkedLabels: [], // 选中的label
+          relatedLabels: [] // 相关的标签
+        }
+      },
+      apollo: {
+        labels: {
+          query:
                     gql`query {
                             propskit_commandLabel(order_by: {created_at: asc}) {
           id
           content
         }
       }`,
-                update (data) {
-                    return data.propskit_commandLabel
-                },
-                result ({ data, loading, networkStatus }) {
-                },
-                // 错误处理
-                error (error) {
-                    console.error('We\'ve got an error!', error)
-                }
-            },
-            commandsRecently: {
-                // todo:这里要写最近用过的，暂时不做
-                query:
+          update (data) {
+            return data.propskit_commandLabel
+          },
+          result ({ data, loading, networkStatus }) {
+          },
+          // 错误处理
+          error (error) {
+            console.error('We\'ve got an error!', error)
+          }
+        },
+        commandsRecently: {
+          // todo:这里要写最近用过的，暂时不做
+          query:
                     gql`query {
                                   propskit_command(order_by: {created_at: desc}, limit: 5) {
           content
@@ -246,18 +246,18 @@
           script
         }
       }`,
-                update (data) {
-                    return data.propskit_command
-                },
-                result ({ data, loading, networkStatus }) {
-                },
-                // 错误处理
-                error (error) {
-                    console.error('We\'ve got an error!', error)
-                }
-            },
-            commandsSelected: {
-                query:
+          update (data) {
+            return data.propskit_command
+          },
+          result ({ data, loading, networkStatus }) {
+          },
+          // 错误处理
+          error (error) {
+            console.error('We\'ve got an error!', error)
+          }
+        },
+        commandsSelected: {
+          query:
                     gql`query ($selectList:[String!]){
                                               propskit_command(order_by: {created_at: asc}, where: {commandConnects: {commandLabel: {content: {_in: $selectList}}}}) {
           id
@@ -267,72 +267,72 @@
           script
         }
       }`,
-                variables () {
-                    return {
-                        selectList: this.checkedLabels
-                    }
-                },
-                update (data) {
-                    console.log(data)
-                    return data.propskit_command
-                },
-                result ({ data, loading, networkStatus }) {
-                },
-                // 错误处理
-                error (error) {
-                    console.error('We\'ve got an error!', error)
-                },
-                skip () {
-                    return !this.checkedLabels.length
-                }
+          variables () {
+            return {
+              selectList: this.checkedLabels
             }
+          },
+          update (data) {
+            console.log(data)
+            return data.propskit_command
+          },
+          result ({ data, loading, networkStatus }) {
+          },
+          // 错误处理
+          error (error) {
+            console.error('We\'ve got an error!', error)
+          },
+          skip () {
+            return !this.checkedLabels.length
+          }
+        }
+      },
+      methods: {
+        switchKit: function () {
+          this.$router.push('/')
         },
-        methods: {
-            switchKit: function () {
-                this.$router.push('/')
-            },
-            newFixed: function () {
-                // 增加固定词
-                this.newCommand.push('')
-                this.newCommandType.push('fixed')
-                this.newCommandScript.push('固定')
-            },
-            newFree: function () {
-                // 增加灵活词
-                this.newCommand.push('')
-                this.newCommandType.push('free')
-                this.newCommandScript.push('')
-            },
-            newBlank: function () {
-                // 增加空格
-                this.newCommand.push('')
-                this.newCommandType.push('blank')
-                this.newCommandScript.push('_')
-            },
-            addCommandBox: function () {
-                // 确认增加命令
-                this.addCommand = true
-                console.log(this.labels)
-            },
-            commandReset: function () {
-                this.newCommand = []
-                this.newCommandType = []
-                this.newCommandScript = []
-                this.newCommandMainscript = ''
-                this.addCommand = false
-                this.relatedLabels = []
-            },
-            confirmAddCommand: async function () {
-                if (!this.relatedLabels) {
-                    this.$message.error('不能为空')
-                    return
-                }
-                let relatedLabels = this.labels.filter(o => this.relatedLabels.includes(o.content))
-                let ids = relatedLabels.map((item) => {
-                    return { labelId: item.id }
-                })
-                let data = await this.$apollo.mutate({
-                    mutation: gql`mutation($content:jsonb,$contentType:jsonb,$script:jsonb,$mainScript:String,$ids:[propskit_commandConnect_insert_input!]!){
+        newFixed: function () {
+          // 增加固定词
+          this.newCommand.push('')
+          this.newCommandType.push('fixed')
+          this.newCommandScript.push('固定')
+        },
+        newFree: function () {
+          // 增加灵活词
+          this.newCommand.push('')
+          this.newCommandType.push('free')
+          this.newCommandScript.push('')
+        },
+        newBlank: function () {
+          // 增加空格
+          this.newCommand.push('')
+          this.newCommandType.push('blank')
+          this.newCommandScript.push('_')
+        },
+        addCommandBox: function () {
+          // 确认增加命令
+          this.addCommand = true
+          console.log(this.labels)
+        },
+        commandReset: function () {
+          this.newCommand = []
+          this.newCommandType = []
+          this.newCommandScript = []
+          this.newCommandMainscript = ''
+          this.addCommand = false
+          this.relatedLabels = []
+        },
+        confirmAddCommand: async function () {
+          if (!this.relatedLabels) {
+            this.$message.error('不能为空')
+            return
+          }
+          let relatedLabels = this.labels.filter(o => this.relatedLabels.includes(o.content))
+          let ids = relatedLabels.map((item) => {
+            return { labelId: item.id }
+          })
+          let data = await this.$apollo.mutate({
+            mutation: gql`mutation($content:jsonb,$contentType:jsonb,$script:jsonb,$mainScript:String,$ids:[propskit_commandConnect_insert_input!]!){
                             insert_propskit_command(objects: {commandConnects: {data: $ids},content: $content, contentType: $contentType, mainScript: $mainScript, script: $script}) {
             returning {
               id
@@ -341,29 +341,29 @@
             }
           }
         }`,
-                    variables: {
-                        content: this.newCommand,
-                        contentType: this.newCommandType,
-                        script: this.newCommandScript,
-                        mainScript: this.newCommandMainscript,
-                        ids: ids
-                    }
-                }).catch((error) => {
-                    this.$message.error('出错了，请重试')
-                    console.log(error)
-                })
-                if (data) {
-                    this.$apollo.queries.commandsRecently.refetch()
-                    this.$apollo.queries.commandsSelected.refetch()
-                    this.$message.success('成功')
-                    this.newLabel = ''
-                    this.commandReset()
-                }
-            },
-            addLabel: async function () {
-                // 增加label
-                let data = await this.$apollo.mutate({
-                    mutation: gql`mutation($content:String!){
+            variables: {
+              content: this.newCommand,
+              contentType: this.newCommandType,
+              script: this.newCommandScript,
+              mainScript: this.newCommandMainscript,
+              ids: ids
+            }
+          }).catch((error) => {
+            this.$message.error('出错了，请重试')
+            console.log(error)
+          })
+          if (data) {
+            this.$apollo.queries.commandsRecently.refetch()
+            this.$apollo.queries.commandsSelected.refetch()
+            this.$message.success('成功')
+            this.newLabel = ''
+            this.commandReset()
+          }
+        },
+        addLabel: async function () {
+          // 增加label
+          let data = await this.$apollo.mutate({
+            mutation: gql`mutation($content:String!){
                     insert_propskit_commandLabel(objects: {content: $content}) {
             returning {
               content
@@ -371,50 +371,50 @@
             }
           }
         }`,
-                    variables: {
-                        content: this.newLabel
-                    }
-                }).catch((error) => {
-                    this.$message.error('出错了，请重试')
-                    console.log(error)
-                })
-                if (data) {
-                    this.$apollo.queries.labels.refetch()
-                    this.$message.success('成功')
-                    this.newLabel = ''
-                }
-            },
-            copyCommand: function (item) {
-                let str = ''
-                console.log(item)
-                item.content.forEach((i, index) => {
-                    if (item.contentType[index] === 'blank') {
-                        str += ' '
-                    } else {
-                        str += i
-                    }
-                })
-                this.$copyText(str).then(() => {
-                    this.$message.success('复制成功')
-                })
-            },
-            handleChangeRelated (relatedLabels) {
-                this.relatedLabels = relatedLabels
-            },
-            handleChangeChecked (checkedLabels) {
-                this.checkedLabels = checkedLabels
+            variables: {
+              content: this.newLabel
             }
+          }).catch((error) => {
+            this.$message.error('出错了，请重试')
+            console.log(error)
+          })
+          if (data) {
+            this.$apollo.queries.labels.refetch()
+            this.$message.success('成功')
+            this.newLabel = ''
+          }
         },
-        computed: {
-            filteredChecked () {
-                if (!this.labels || !this.labels.length) return []
-                return this.labels.filter(o => !this.checkedLabels.includes(o.content))
-            },
-            filteredRelated () {
-                if (!this.labels || !this.labels.length) return []
-                return this.labels.filter(o => !this.relatedLabels.includes(o.content))
+        copyCommand: function (item) {
+          let str = ''
+          console.log(item)
+          item.content.forEach((i, index) => {
+            if (item.contentType[index] === 'blank') {
+              str += ' '
+            } else {
+              str += i
             }
+          })
+          this.$copyText(str).then(() => {
+            this.$message.success('复制成功')
+          })
+        },
+        handleChangeRelated (relatedLabels) {
+          this.relatedLabels = relatedLabels
+        },
+        handleChangeChecked (checkedLabels) {
+          this.checkedLabels = checkedLabels
         }
+      },
+      computed: {
+        filteredChecked () {
+          if (!this.labels || !this.labels.length) return []
+          return this.labels.filter(o => !this.checkedLabels.includes(o.content))
+        },
+        filteredRelated () {
+          if (!this.labels || !this.labels.length) return []
+          return this.labels.filter(o => !this.relatedLabels.includes(o.content))
+        }
+      }
     }
 </script>
 
