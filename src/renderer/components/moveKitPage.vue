@@ -22,6 +22,7 @@ export default {
 	data() {
 		return {
 			position: { x: 1, y: 1 },
+            processList:[]
 		}
 	},
 	computed: {},
