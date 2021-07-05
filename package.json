@@ -58,7 +58,7 @@
     "apollo-client": "^2.6.8",
     "apollo-link": "^1.2.14",
     "apollo-link-http": "^1.5.17",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "electron-rebuild": "^2.3.5",
     "graphql": "^15.0.0",
     "graphql-tag": "^2.10.3",
